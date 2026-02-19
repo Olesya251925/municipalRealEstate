@@ -2,8 +2,9 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
 }
 
 body {
@@ -116,4 +117,60 @@ body {
 
 .leaflet-popup-tip {
   background-color: white !important;
+}
+/* Стили для кастомных маркеров */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Стили для попапа с прокруткой */
+.custom-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: 100% !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Стили для скролла */
+.custom-popup .leaflet-popup-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-popup .leaflet-popup-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.custom-popup .leaflet-popup-content::-webkit-scrollbar-thumb {
+  background: #1e3a8a;
+  border-radius: 3px;
+}
+
+.custom-popup .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
+  background: #2a4a9c;
+}
+
+.custom-popup .leaflet-popup-tip {
+  background-color: white !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Стили для модального окна */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
 }
