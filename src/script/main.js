@@ -194,7 +194,7 @@ async function loadContractInfo(objectId, popupElement) {
 }
 
 window.downloadContract = function (leaseId) {
-  window.open(`/contracts/contract_${leaseId}.pdf`, "_blank");
+  window.open(`/api/download-contract/${leaseId}`, "_blank");
 };
 
 window.showAllPayments = async function (objectId) {
