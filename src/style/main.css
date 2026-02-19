@@ -118,13 +118,12 @@ body {
 .leaflet-popup-tip {
   background-color: white !important;
 }
-/* Стили для кастомных маркеров */
+
 .custom-marker {
   background: transparent;
   border: none;
 }
 
-/* Стили для попапа с прокруткой */
 .custom-popup .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
   padding: 0 !important;
@@ -164,7 +163,6 @@ body {
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Стили для модального окна */
 .modal-overlay {
   position: fixed;
   top: 0;

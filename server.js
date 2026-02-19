@@ -114,15 +114,17 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
     const { leaseId } = req.params;
 
     const contractQuery = `
-      SELECT 
-        d.*,
-        o.name as object_name,
-        o.address,
-        o.cadastral_number
-      FROM data_public."договор_аренды" d
-      LEFT JOIN data_public."справочник_объектов_недвижимости" o ON d.object_id = o.objectestate_id
-      WHERE d.lease_id = $1
-    `;
+  SELECT 
+    d.*,
+    o.name as object_name,
+    o.address,
+    o.cadastral_number,
+    r.name as renter_name
+  FROM data_public."договор_аренды" d
+  LEFT JOIN data_public."справочник_объектов_недвижимости" o ON d.object_id = o.objectestate_id
+  LEFT JOIN data_public."арендаторы" r ON d.rentor_id = r.rentor_id
+  WHERE d.lease_id = $1
+`;
     const contractResult = await pool.query(contractQuery, [leaseId]);
 
     if (contractResult.rows.length === 0) {
@@ -265,22 +267,79 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
 
     doc.moveDown(2);
 
-    doc.moveDown(2);
-
     doc
       .font("DejaVuSans")
       .fontSize(11)
       .fillColor("#333333")
-      .text("Арендодатель:", 50, doc.y)
-      .moveDown(2)
-      .text("_______________ / __________________", 50, doc.y)
-      .moveDown(2);
+      .text("Арендатор:", 50, doc.y)
+      .moveDown(1)
+      .text(`${contract.renter_name || "Не указан"}`, 50, doc.y)
+      .moveDown(1);
 
     doc
       .font("DejaVuSans")
       .fontSize(10)
       .fillColor("#666666")
-      .text("(подпись / ФИО)", 50, doc.y, { align: "left" });
+      .text("(подпись)", 50, doc.y, { align: "left" })
+      .moveDown(1);
+
+    doc
+      .font("DejaVuSans")
+      .fontSize(10)
+      .fillColor("#666666")
+      .text(
+        `Дата подписания: ${new Date().toLocaleDateString("ru-RU")}`,
+        50,
+        doc.y,
+      );
+
+    let sealX = 360;
+    let sealY = doc.y - 70;
+
+    doc.save();
+
+    doc
+      .circle(sealX + 60, sealY + 50, 65)
+      .lineWidth(2)
+      .strokeColor("#1E3A8A")
+      .stroke();
+
+    doc
+      .circle(sealX + 60, sealY + 50, 55)
+      .lineWidth(1)
+      .strokeColor("#1E3A8A")
+      .stroke();
+
+    doc
+      .fontSize(10)
+      .fillColor("#1E3A8A")
+      .text("ПОДПИСАНО", sealX + 15, sealY + 30, {
+        align: "center",
+        width: 90,
+      });
+
+    doc
+      .fontSize(10)
+      .fillColor("#1E3A8A")
+      .text("ЭЛЕКТРОННОЙ", sealX + 15, sealY + 45, {
+        align: "center",
+        width: 90,
+      });
+
+    doc
+      .fontSize(10)
+      .fillColor("#1E3A8A")
+      .text("ПОДПИСЬЮ", sealX + 15, sealY + 60, {
+        align: "center",
+        width: 90,
+      });
+
+    doc
+      .fontSize(10)
+      .fillColor("#1E3A8A")
+      .text("✓", sealX + 65, sealY + 78, { align: "center" });
+
+    doc.restore();
 
     doc.end();
   } catch (error) {
