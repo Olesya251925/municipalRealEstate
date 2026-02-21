@@ -45,7 +45,6 @@ app.get("/api/coordinates", async (req, res) => {
       WHERE obj.width IS NOT NULL AND obj.length IS NOT NULL
     `;
     const result = await pool.query(query);
-    console.log("Найдено объектов:", result.rows.length);
     res.json(result.rows);
   } catch (error) {
     console.error("Ошибка:", error);
@@ -344,6 +343,176 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
     doc.end();
   } catch (error) {
     console.error("Ошибка генерации PDF:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/analytics/districts", async (req, res) => {
+  try {
+    const query = `
+      WITH district_payments AS (
+        SELECT 
+          CASE 
+            WHEN obj.address LIKE '%Рудничный%' THEN 'Рудничный'
+            WHEN obj.address LIKE '%Центральный%' THEN 'Центральный'
+            WHEN obj.address LIKE '%Ленинский%' THEN 'Ленинский'
+            WHEN obj.address LIKE '%Кировский%' THEN 'Кировский'
+            WHEN obj.address LIKE '%Заводский%' THEN 'Заводский'
+            ELSE 'Другие'
+          END as district,
+          p.sum
+        FROM data_public."справочник_объектов_недвижимости" obj
+        LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
+        LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
+        WHERE p.status_pay = 'Оплачен'
+          AND p.date_pay >= NOW() - INTERVAL '1 month'
+      )
+      SELECT 
+        district,
+        COALESCE(SUM(sum), 0) as total_income
+      FROM district_payments
+      WHERE district IS NOT NULL
+      GROUP BY district
+      ORDER BY total_income DESC
+    `;
+    const result = await pool.query(query);
+
+    if (result.rows.length === 0) {
+      const fallbackQuery = `
+        WITH district_payments AS (
+          SELECT 
+            CASE 
+              WHEN obj.address LIKE '%Рудничный%' THEN 'Рудничный'
+              WHEN obj.address LIKE '%Центральный%' THEN 'Центральный'
+              WHEN obj.address LIKE '%Ленинский%' THEN 'Ленинский'
+              WHEN obj.address LIKE '%Кировский%' THEN 'Кировский'
+              WHEN obj.address LIKE '%Заводский%' THEN 'Заводский'
+              ELSE 'Другие'
+            END as district,
+            p.sum
+          FROM data_public."справочник_объектов_недвижимости" obj
+          LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
+          LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
+          WHERE p.status_pay = 'Оплачен'
+        )
+        SELECT 
+          district,
+          COALESCE(SUM(sum), 0) as total_income
+        FROM district_payments
+        WHERE district IS NOT NULL
+        GROUP BY district
+        ORDER BY total_income DESC
+      `;
+      const fallbackResult = await pool.query(fallbackQuery);
+      return res.json(fallbackResult.rows);
+    }
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка аналитики по районам:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/analytics/top-objects", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        obj.name,
+        COALESCE(SUM(p.sum), 0) as total_income
+      FROM data_public."справочник_объектов_недвижимости" obj
+      LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
+      LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
+        AND p.status_pay = 'Оплачен'
+      GROUP BY obj.objectestate_id, obj.name
+      HAVING SUM(p.sum) > 0
+      ORDER BY total_income DESC
+      LIMIT 5
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка топа объектов:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/analytics/overdue", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        obj.name as object_name,
+        CASE 
+          WHEN obj.address LIKE '%Рудничный%' THEN 'Рудничный'
+          WHEN obj.address LIKE '%Центральный%' THEN 'Центральный'
+          WHEN obj.address LIKE '%Ленинский%' THEN 'Ленинский'
+          WHEN obj.address LIKE '%Кировский%' THEN 'Кировский'
+          WHEN obj.address LIKE '%Заводский%' THEN 'Заводский'
+          ELSE 'Другие'
+        END as district,
+        p.sum as overdue_sum,
+        EXTRACT(DAY FROM NOW() - p.date_pay) as days_overdue
+      FROM data_public."платежи" p
+      LEFT JOIN data_public."договор_аренды" d ON p.lease_id = d.lease_id
+      LEFT JOIN data_public."справочник_объектов_недвижимости" obj ON d.object_id = obj.objectestate_id
+      WHERE p.status_pay = 'Просрочен'
+      ORDER BY days_overdue DESC
+      LIMIT 10
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка просрочек:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/analytics/stats", async (req, res) => {
+  try {
+    const totalQuery = `SELECT COUNT(*) as count FROM data_public."справочник_объектов_недвижимости"`;
+    const total = await pool.query(totalQuery);
+
+    const rentedQuery = `
+      SELECT COUNT(DISTINCT d.object_id) as count 
+      FROM data_public."договор_аренды" d
+      WHERE d.status_contract = 'Активный'
+    `;
+    const rented = await pool.query(rentedQuery);
+
+    const rateQuery = `
+      SELECT AVG(d.rent / NULLIF(d.rented_area, 0)) as avg_rate
+      FROM data_public."договор_аренды" d
+      WHERE d.status_contract = 'Активный'
+    `;
+    const rate = await pool.query(rateQuery);
+
+    const overdueQuery = `
+      SELECT 
+        COALESCE(SUM(p.sum), 0) as total_overdue,
+        COUNT(DISTINCT p.lease_id) as overdue_count
+      FROM data_public."платежи" p
+      WHERE p.status_pay = 'Просрочен'
+    `;
+    const overdue = await pool.query(overdueQuery);
+
+    const occupancyQuery = `
+      SELECT 
+        (COUNT(CASE WHEN d.status_contract = 'Активный' THEN 1 END) * 100.0 / 
+         NULLIF(COUNT(*), 0)) as occupancy_rate
+      FROM data_public."договор_аренды" d
+    `;
+    const occupancy = await pool.query(occupancyQuery);
+
+    res.json({
+      totalObjects: parseInt(total.rows[0].count) || 0,
+      rentedObjects: parseInt(rented.rows[0].count) || 0,
+      avgRate: Math.round(rate.rows[0].avg_rate) || 0,
+      overdueAmount: parseFloat(overdue.rows[0].total_overdue) || 0,
+      overdueCount: parseInt(overdue.rows[0].overdue_count) || 0,
+      occupancyRate: Math.round(occupancy.rows[0].occupancy_rate) || 0,
+    });
+  } catch (error) {
+    console.error("Ошибка статистики:", error);
     res.status(500).json({ error: error.message });
   }
 });

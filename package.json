@@ -7,6 +7,7 @@
     "start": "node src/script/server.js"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "cors": "^2.8.6",
     "express": "^4.22.1",
     "fontkit": "^2.0.4",

@@ -139,7 +139,6 @@ body {
   overflow-x: hidden !important;
 }
 
-/* Стили для скролла */
 .custom-popup .leaflet-popup-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -171,4 +170,29 @@ body {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1999;
+}
+
+.header-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 500;
 }

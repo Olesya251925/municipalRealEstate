@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Аналитика - Муниципальная недвижимость</title>
+    <link rel="icon" href="icons/administration.jpg" type="image/jpeg" />
+    <link rel="stylesheet" href="style/main.css" />
+    <link rel="stylesheet" href="style/analytics.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="header">
+      <span class="home-icon"></span>
+      <h1>Муниципальная недвижимость</h1>
+      <nav class="header-nav">
+        <a href="index.html" class="nav-link">Карта</a>
+        <a href="analytics.html" class="nav-link active">Аналитика</a>
+      </nav>
+    </div>
+
+    <div class="analytics-container">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Объектов всего</div>
+          <div class="stat-value" id="totalObjects">15</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Сдано в аренду</div>
+          <div class="stat-value" id="rentedObjects">12</div>
+          <div class="stat-trend">80% заполняемость</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Средняя ставка</div>
+          <div class="stat-value" id="avgRate">1 245 ₽/м²</div>
+          <div class="stat-trend">+5% к прошлому месяцу</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Просрочки</div>
+          <div class="stat-value" id="overdueAmount">234 500 ₽</div>
+          <div class="stat-trend negative">8 объектов</div>
+        </div>
+      </div>
+
+      <!-- График доходности по районам (компактный) -->
+      <div class="chart-container">
+        <h3>Доходность по районам</h3>
+        <div class="chart-wrapper">
+          <canvas id="districtChart" width="400" height="200"></canvas>
+        </div>
+        <p class="chart-note">Центральный район лидирует по доходности</p>
+      </div>
+
+      <!-- Таблица просрочек -->
+      <div class="table-container">
+        <h3>Просрочки по платежам</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Объект</th>
+              <th>Район</th>
+              <th>Сумма</th>
+              <th>Дней</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="overdueTableBody">
+            <tr>
+              <td>Детский сад №114</td>
+              <td>Центральный</td>
+              <td>45 000 ₽</td>
+              <td>15</td>
+              <td><span class="badge warning">Просрочка</span></td>
+            </tr>
+            <tr>
+              <td>Административное здание</td>
+              <td>Ленинский</td>
+              <td>92 500 ₽</td>
+              <td>32</td>
+              <td><span class="badge critical">Критично</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Самые доходные объекты -->
+      <div class="chart-container">
+        <h3>Топ-5 объектов по доходу</h3>
+        <div class="chart-wrapper">
+          <canvas id="topObjectsChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script src="script/analytics.js"></script>
+  </body>
+</html>
