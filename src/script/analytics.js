@@ -144,6 +144,37 @@ async function loadObjectTypesChart() {
       return;
     }
 
+    const formatLegendText = (label, value) => {
+      const base = `${label} - ${value} млн ₽`;
+      const maxLength = 30;
+
+      if (base.length <= maxLength) {
+        return base;
+      }
+
+      const words = base.split(" ");
+      const lines = [];
+      let currentLine = "";
+
+      for (const word of words) {
+        const testLine = currentLine ? currentLine + " " + word : word;
+        if (testLine.length > maxLength) {
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines;
+    };
+
     const ctx = document.getElementById("objectTypesChart").getContext("2d");
     new Chart(ctx, {
       type: "doughnut",
@@ -166,7 +197,7 @@ async function loadObjectTypesChart() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         cutout: "60%",
         plugins: {
           legend: {
@@ -174,16 +205,17 @@ async function loadObjectTypesChart() {
             align: "center",
             labels: {
               font: { size: 13, weight: "500" },
-              padding: 20,
+              padding: 12,
               usePointStyle: true,
               pointStyle: "circle",
-              boxWidth: 12,
-              boxHeight: 12,
+              boxWidth: 10,
+              boxHeight: 10,
               generateLabels: (chart) => {
                 const data = chart.data;
+                const dataset = data.datasets[0];
                 return data.labels.map((label, i) => ({
-                  text: `${label} - ${data.datasets[0].data[i]} млн ₽`,
-                  fillStyle: data.datasets[0].backgroundColor[i],
+                  text: formatLegendText(label, dataset.data[i]),
+                  fillStyle: dataset.backgroundColor[i],
                   strokeStyle: "transparent",
                   lineWidth: 0,
                   hidden: false,
