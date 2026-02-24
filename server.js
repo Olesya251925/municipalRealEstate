@@ -465,7 +465,7 @@ app.get("/api/analytics/overdue", async (req, res) => {
         AND p.date_pay >= NOW() - INTERVAL '180 days'
         AND d.lease_id IS NOT NULL
       ORDER BY days_overdue DESC
-      LIMIT 10
+      LIMIT 15
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -498,19 +498,17 @@ app.get("/api/analytics/stats", async (req, res) => {
     const overdueQuery = `
       SELECT 
         COALESCE(SUM(p.sum), 0) as total_overdue,
-        COUNT(DISTINCT p.lease_id) as overdue_count
+        COUNT(DISTINCT d.object_id) as overdue_count
       FROM data_public."платежи" p
+      JOIN data_public."договор_аренды" d ON p.lease_id = d.lease_id
       WHERE p.status_pay = 'Просрочен'
-        AND p.date_pay >= NOW() - INTERVAL '90 days'
     `;
     const overdue = await pool.query(overdueQuery);
 
     const occupancyQuery = `
       SELECT 
-        COALESCE(
-          (COUNT(CASE WHEN d.status_contract = 'Активный' THEN 1 END) * 100.0 / 
-          NULLIF(COUNT(*), 0)), 0
-        ) as occupancy_rate
+        (COUNT(CASE WHEN d.status_contract = 'Активный' THEN 1 END) * 100.0 / 
+        COUNT(*)) as occupancy_rate
       FROM data_public."договор_аренды" d
     `;
     const occupancy = await pool.query(occupancyQuery);

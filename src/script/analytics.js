@@ -20,7 +20,6 @@ async function loadStats() {
       Math.round(stats.avgRate) + " ₽/м²";
     document.getElementById("overdueAmount").textContent =
       new Intl.NumberFormat("ru-RU").format(stats.overdueAmount) + " ₽";
-
     document.getElementById("occupancyText").textContent =
       Math.round(stats.occupancyRate) + "% заполняемость";
     document.getElementById("overdueCount").textContent =
