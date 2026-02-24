@@ -3,6 +3,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   await loadDistrictChart();
   await loadTopObjectsChart();
   await loadOverdueTable();
+  await loadObjectTypesChart();
+  await loadRenterReliabilityChart();
+  await loadForecastChart();
+  await loadSeasonalityChart();
 });
 
 async function loadStats() {
@@ -17,9 +21,9 @@ async function loadStats() {
     document.getElementById("overdueAmount").textContent =
       new Intl.NumberFormat("ru-RU").format(stats.overdueAmount) + " ₽";
 
-    document.querySelector(".stat-card:nth-child(2) .stat-trend").textContent =
+    document.getElementById("occupancyText").textContent =
       Math.round(stats.occupancyRate) + "% заполняемость";
-    document.querySelector(".stat-card:nth-child(4) .stat-trend").textContent =
+    document.getElementById("overdueCount").textContent =
       stats.overdueCount + " объектов";
   } catch (error) {
     console.error("Ошибка загрузки статистики:", error);
@@ -32,7 +36,7 @@ async function loadDistrictChart() {
     const data = await response.json();
 
     if (data.length === 0) {
-      document.querySelector(".chart-note").textContent =
+      document.getElementById("districtNote").textContent =
         "Нет данных за период";
       return;
     }
@@ -71,10 +75,12 @@ async function loadDistrictChart() {
     const topDistrict = data.reduce((max, item) =>
       item.total_income > max.total_income ? item : max,
     );
-    document.querySelector(".chart-note").textContent =
+    document.getElementById("districtNote").textContent =
       `${topDistrict.district} район лидирует по доходности`;
   } catch (error) {
     console.error("Ошибка загрузки данных районов:", error);
+    document.getElementById("districtNote").textContent =
+      "Ошибка загрузки данных";
   }
 }
 
@@ -124,6 +130,335 @@ async function loadTopObjectsChart() {
     });
   } catch (error) {
     console.error("Ошибка загрузки топа объектов:", error);
+  }
+}
+
+async function loadObjectTypesChart() {
+  try {
+    const response = await fetch("/api/analytics/object-types");
+    const data = await response.json();
+
+    if (data.length === 0) {
+      document.getElementById("objectTypesChart").parentElement.innerHTML =
+        '<p style="text-align: center; color: #666;">Нет данных</p>';
+      return;
+    }
+
+    const ctx = document.getElementById("objectTypesChart").getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: data.map((item) => item.object_type),
+        datasets: [
+          {
+            data: data.map((item) => Math.round(item.total_income / 1000000)),
+            backgroundColor: [
+              "#1E3A8A", // Детские сады - синий
+              "#10b981", // Школы - зеленый
+              "#f59e0b", // Офисы - оранжевый
+              "#ef4444", // Помещения - красный
+              "#8b5cf6", // Сооружения - фиолетовый
+              "#ec4899", // Другое - розовый
+            ],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: "60%",
+        plugins: {
+          legend: {
+            position: "right",
+            align: "center",
+            labels: {
+              font: { size: 13, weight: "500" },
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: "circle",
+              boxWidth: 12,
+              boxHeight: 12,
+              generateLabels: (chart) => {
+                const data = chart.data;
+                return data.labels.map((label, i) => ({
+                  text: `${label} - ${data.datasets[0].data[i]} млн ₽`,
+                  fillStyle: data.datasets[0].backgroundColor[i],
+                  strokeStyle: "transparent",
+                  lineWidth: 0,
+                  hidden: false,
+                  index: i,
+                }));
+              },
+            },
+          },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: (context) => {
+                return context.raw + " млн ₽";
+              },
+            },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки типов объектов:", error);
+    document.getElementById("objectTypesChart").parentElement.innerHTML =
+      '<p style="text-align: center; color: #ef4444;">Ошибка загрузки</p>';
+  }
+}
+
+async function loadRenterReliabilityChart() {
+  try {
+    const response = await fetch("/api/analytics/renter-reliability");
+    const data = await response.json();
+
+    if (data.length === 0) return;
+
+    const ctx = document
+      .getElementById("renterReliabilityChart")
+      .getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: data.map((item) => {
+          const name = item.renter_name || "Неизвестно";
+          return name.length > 12 ? name.substring(0, 10) + "..." : name;
+        }),
+        datasets: [
+          {
+            label: "Надежность (%)",
+            data: data.map((item) => item.reliability_percent),
+            backgroundColor: data.map((item) =>
+              item.reliability_percent > 80
+                ? "#10b981"
+                : item.reliability_percent > 50
+                  ? "#f59e0b"
+                  : "#ef4444",
+            ),
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return context.raw + "% платежей вовремя";
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            grid: { color: "#e0e0e0" },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки надежности арендаторов:", error);
+  }
+}
+
+async function loadForecastChart() {
+  try {
+    const response = await fetch("/api/analytics/forecast");
+    const data = await response.json();
+
+    if (data.length === 0) return;
+
+    const ctx = document.getElementById("forecastChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map((item) => item.month),
+        datasets: [
+          {
+            label: "Фактические доходы",
+            data: data.map((item) => item.actual / 1000),
+            borderColor: "#1E3A8A",
+            backgroundColor: "rgba(30, 58, 138, 0.1)",
+            borderWidth: 4,
+            tension: 0.3,
+            pointBackgroundColor: "#1E3A8A",
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            fill: false,
+          },
+          {
+            label: "Прогноз",
+            data: data.map((item) => item.forecast / 1000),
+            borderColor: "#f59e0b",
+            backgroundColor: "transparent",
+            borderWidth: 4,
+            borderDash: [8, 4],
+            tension: 0.3,
+            pointBackgroundColor: "#f59e0b",
+            pointRadius: 6,
+            pointHoverRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              font: { size: 12, weight: "bold" },
+              usePointStyle: true,
+              pointStyle: "circle",
+            },
+          },
+          tooltip: {
+            backgroundColor: "white",
+            titleColor: "#1E3A8A",
+            bodyColor: "#333",
+            borderColor: "#e0e0e0",
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => {
+                return context.dataset.label + ": " + context.raw + " млн ₽";
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "#e0e0e0", drawBorder: false },
+            title: {
+              display: true,
+              text: "млн рублей",
+              color: "#666",
+              font: { size: 11 },
+            },
+            ticks: {
+              callback: (value) => value + " млн",
+            },
+          },
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { size: 11, weight: "bold" },
+              color: "#333",
+            },
+          },
+        },
+      },
+    });
+
+    const totalForecast = data.reduce(
+      (sum, item) => sum + (item.forecast || 0),
+      0,
+    );
+    document.getElementById("forecastNote").textContent =
+      `💰 Прогноз на 3 месяца: ${Math.round(totalForecast / 1000)} млн ₽`;
+  } catch (error) {
+    console.error("Ошибка загрузки прогноза:", error);
+  }
+}
+
+async function loadSeasonalityChart() {
+  try {
+    const response = await fetch("/api/analytics/seasonality");
+    const data = await response.json();
+
+    if (data.length === 0) return;
+
+    const ctx = document.getElementById("seasonalityChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map((item) => item.month),
+        datasets: [
+          {
+            label: "Оплаты",
+            data: data.map((item) => item.paid_count),
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            borderWidth: 4,
+            tension: 0.4,
+            pointBackgroundColor: "#10b981",
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: true,
+          },
+          {
+            label: "Просрочки",
+            data: data.map((item) => item.overdue_count),
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            borderWidth: 4,
+            tension: 0.4,
+            pointBackgroundColor: "#ef4444",
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              font: { size: 12, weight: "bold" },
+              usePointStyle: true,
+              pointStyle: "circle",
+            },
+          },
+          tooltip: {
+            backgroundColor: "white",
+            titleColor: "#1E3A8A",
+            bodyColor: "#333",
+            borderColor: "#e0e0e0",
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => {
+                return context.dataset.label + ": " + context.raw + " шт";
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "#e0e0e0", drawBorder: false },
+            title: {
+              display: true,
+              text: "количество платежей",
+              color: "#666",
+              font: { size: 11 },
+            },
+            ticks: {
+              stepSize: 5,
+            },
+          },
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { size: 11, weight: "bold" },
+              color: "#333",
+            },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки сезонности:", error);
   }
 }
 

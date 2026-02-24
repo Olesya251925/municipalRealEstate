@@ -347,6 +347,9 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
   }
 });
 
+// ========== АНАЛИТИКА ==========
+
+// Доходность по районам
 app.get("/api/analytics/districts", async (req, res) => {
   try {
     const query = `
@@ -365,7 +368,7 @@ app.get("/api/analytics/districts", async (req, res) => {
         LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
         LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
         WHERE p.status_pay = 'Оплачен'
-          AND p.date_pay >= NOW() - INTERVAL '1 month'
+          AND p.date_pay >= NOW() - INTERVAL '6 months'
       )
       SELECT 
         district,
@@ -414,6 +417,7 @@ app.get("/api/analytics/districts", async (req, res) => {
   }
 });
 
+// Топ-10 объектов по доходу
 app.get("/api/analytics/top-objects", async (req, res) => {
   try {
     const query = `
@@ -424,10 +428,11 @@ app.get("/api/analytics/top-objects", async (req, res) => {
       LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
       LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
         AND p.status_pay = 'Оплачен'
+        AND p.date_pay >= NOW() - INTERVAL '12 months'
       GROUP BY obj.objectestate_id, obj.name
       HAVING SUM(p.sum) > 0
       ORDER BY total_income DESC
-      LIMIT 5
+      LIMIT 10
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -437,11 +442,12 @@ app.get("/api/analytics/top-objects", async (req, res) => {
   }
 });
 
+// Просрочки
 app.get("/api/analytics/overdue", async (req, res) => {
   try {
     const query = `
       SELECT 
-        obj.name as object_name,
+        COALESCE(obj.name, 'Неизвестный объект') as object_name,
         CASE 
           WHEN obj.address LIKE '%Рудничный%' THEN 'Рудничный'
           WHEN obj.address LIKE '%Центральный%' THEN 'Центральный'
@@ -456,6 +462,8 @@ app.get("/api/analytics/overdue", async (req, res) => {
       LEFT JOIN data_public."договор_аренды" d ON p.lease_id = d.lease_id
       LEFT JOIN data_public."справочник_объектов_недвижимости" obj ON d.object_id = obj.objectestate_id
       WHERE p.status_pay = 'Просрочен'
+        AND p.date_pay >= NOW() - INTERVAL '180 days'
+        AND d.lease_id IS NOT NULL
       ORDER BY days_overdue DESC
       LIMIT 10
     `;
@@ -467,6 +475,7 @@ app.get("/api/analytics/overdue", async (req, res) => {
   }
 });
 
+// Статистика для верхних карточек
 app.get("/api/analytics/stats", async (req, res) => {
   try {
     const totalQuery = `SELECT COUNT(*) as count FROM data_public."справочник_объектов_недвижимости"`;
@@ -480,7 +489,7 @@ app.get("/api/analytics/stats", async (req, res) => {
     const rented = await pool.query(rentedQuery);
 
     const rateQuery = `
-      SELECT AVG(d.rent / NULLIF(d.rented_area, 0)) as avg_rate
+      SELECT COALESCE(AVG(d.rent / NULLIF(d.rented_area, 0)), 0) as avg_rate
       FROM data_public."договор_аренды" d
       WHERE d.status_contract = 'Активный'
     `;
@@ -492,13 +501,16 @@ app.get("/api/analytics/stats", async (req, res) => {
         COUNT(DISTINCT p.lease_id) as overdue_count
       FROM data_public."платежи" p
       WHERE p.status_pay = 'Просрочен'
+        AND p.date_pay >= NOW() - INTERVAL '90 days'
     `;
     const overdue = await pool.query(overdueQuery);
 
     const occupancyQuery = `
       SELECT 
-        (COUNT(CASE WHEN d.status_contract = 'Активный' THEN 1 END) * 100.0 / 
-         NULLIF(COUNT(*), 0)) as occupancy_rate
+        COALESCE(
+          (COUNT(CASE WHEN d.status_contract = 'Активный' THEN 1 END) * 100.0 / 
+          NULLIF(COUNT(*), 0)), 0
+        ) as occupancy_rate
       FROM data_public."договор_аренды" d
     `;
     const occupancy = await pool.query(occupancyQuery);
@@ -513,6 +525,186 @@ app.get("/api/analytics/stats", async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка статистики:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Типы объектов
+app.get("/api/analytics/object-types", async (req, res) => {
+  try {
+    const query = `
+      WITH object_income AS (
+        SELECT 
+          obj.objectestate_id,
+          CASE 
+            WHEN obj.name ILIKE '%детский сад%' THEN 'Детские сады'
+            WHEN obj.name ILIKE '%школ%' THEN 'Школы'
+            WHEN obj.name ILIKE '%административ%' THEN 'Офисы'
+            WHEN obj.name ILIKE '%помещение%' THEN 'Помещения'
+            WHEN obj.name ILIKE '%сооружение%' THEN 'Сооружения'
+            WHEN obj.name ILIKE '%жилое%' THEN 'Жилые помещения'
+            ELSE 'Другое'
+          END as object_type,
+          COALESCE(SUM(p.sum), 0) as total_income
+        FROM data_public."справочник_объектов_недвижимости" obj
+        LEFT JOIN data_public."договор_аренды" d ON obj.objectestate_id = d.object_id
+        LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
+          AND p.status_pay = 'Оплачен'
+        GROUP BY obj.objectestate_id, object_type
+      )
+      SELECT 
+        object_type,
+        COUNT(*) as count,
+        SUM(total_income) as total_income
+      FROM object_income
+      GROUP BY object_type
+      ORDER BY total_income DESC
+    `;
+    const result = await pool.query(query);
+
+    console.log("Типы объектов:", result.rows);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка типов объектов:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Надежность арендаторов
+app.get("/api/analytics/renter-reliability", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        a.name as renter_name,
+        COUNT(p.pay_id) as total_payments,
+        COALESCE(SUM(CASE WHEN p.status_pay = 'Просрочен' THEN 1 ELSE 0 END), 0) as overdue_payments,
+        COALESCE(SUM(CASE WHEN p.status_pay = 'Оплачен' THEN 1 ELSE 0 END), 0) as paid_payments,
+        CASE 
+          WHEN COUNT(p.pay_id) = 0 THEN 0
+          ELSE ROUND(
+            (COALESCE(SUM(CASE WHEN p.status_pay = 'Оплачен' THEN 1 ELSE 0 END), 0) * 100.0 / 
+            COUNT(p.pay_id)), 1
+          )
+        END as reliability_percent
+      FROM data_public."арендаторы" a
+      LEFT JOIN data_public."договор_аренды" d ON a.rentor_id = d.rentor_id
+      LEFT JOIN data_public."платежи" p ON d.lease_id = p.lease_id
+      GROUP BY a.rentor_id, a.name
+      ORDER BY reliability_percent DESC
+    `;
+    const result = await pool.query(query);
+
+    // Для отладки - посмотрим в консоль
+    console.log("Данные по арендаторам:", result.rows);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка надежности арендаторов:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Прогноз доходов
+app.get("/api/analytics/forecast", async (req, res) => {
+  try {
+    // Получаем данные за последние 3 месяца
+    const actualQuery = `
+      SELECT 
+        TO_CHAR(date_pay, 'YYYY-MM') as month,
+        SUM(sum) as total
+      FROM data_public."платежи"
+      WHERE status_pay = 'Оплачен'
+        AND date_pay >= NOW() - INTERVAL '3 months'
+      GROUP BY month
+      ORDER BY month
+      LIMIT 3
+    `;
+    const actualResult = await pool.query(actualQuery);
+
+    // Получаем средний платеж за последние 3 месяца
+    const avgQuery = `
+      SELECT COALESCE(AVG(sum), 0) as avg_payment
+      FROM data_public."платежи"
+      WHERE status_pay = 'Оплачен'
+        AND date_pay >= NOW() - INTERVAL '3 months'
+    `;
+    const avgResult = await pool.query(avgQuery);
+    const avgPayment = parseFloat(avgResult.rows[0].avg_payment) || 0;
+
+    const months = [
+      "Янв",
+      "Фев",
+      "Мар",
+      "Апр",
+      "Май",
+      "Июн",
+      "Июл",
+      "Авг",
+      "Сен",
+      "Окт",
+      "Ноя",
+      "Дек",
+    ];
+    const now = new Date();
+
+    const forecast = [];
+
+    // Последние 3 месяца (факт)
+    for (let i = 2; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(now.getMonth() - i);
+      const monthName = months[date.getMonth()];
+      const monthStr = date.toISOString().slice(0, 7);
+
+      const actualData = actualResult.rows.find((r) => r.month === monthStr);
+
+      forecast.push({
+        month: monthName,
+        actual: actualData ? Math.round(actualData.total / 1000) : 0,
+        forecast: null,
+      });
+    }
+
+    // Следующие 3 месяца (прогноз)
+    const avgMonthlyTotal = avgPayment * 5; // среднее количество платежей в месяц
+    for (let i = 1; i <= 3; i++) {
+      const date = new Date();
+      date.setMonth(now.getMonth() + i);
+      const monthName = months[date.getMonth()];
+
+      forecast.push({
+        month: monthName,
+        actual: null,
+        forecast: Math.round(avgMonthlyTotal / 1000),
+      });
+    }
+
+    res.json(forecast);
+  } catch (error) {
+    console.error("Ошибка прогноза:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Сезонность просрочек
+app.get("/api/analytics/seasonality", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        TO_CHAR(date_pay, 'MM') as month_num,
+        TO_CHAR(date_pay, 'Mon') as month,
+        COUNT(CASE WHEN status_pay = 'Просрочен' THEN 1 END) as overdue_count,
+        COUNT(CASE WHEN status_pay = 'Оплачен' THEN 1 END) as paid_count
+      FROM data_public."платежи" p
+      WHERE date_pay >= NOW() - INTERVAL '12 months'
+        AND EXISTS (SELECT 1 FROM data_public."договор_аренды" d WHERE d.lease_id = p.lease_id)
+      GROUP BY month_num, month
+      ORDER BY month_num
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка сезонности:", error);
     res.status(500).json({ error: error.message });
   }
 });

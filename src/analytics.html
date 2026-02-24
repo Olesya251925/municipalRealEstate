@@ -28,7 +28,7 @@
         <div class="stat-card">
           <div class="stat-label">Сдано в аренду</div>
           <div class="stat-value" id="rentedObjects">12</div>
-          <div class="stat-trend">80% заполняемость</div>
+          <div class="stat-trend" id="occupancyText">80% заполняемость</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Средняя ставка</div>
@@ -38,20 +38,69 @@
         <div class="stat-card">
           <div class="stat-label">Просрочки</div>
           <div class="stat-value" id="overdueAmount">234 500 ₽</div>
-          <div class="stat-trend negative">8 объектов</div>
+          <div class="stat-trend negative" id="overdueCount">8 объектов</div>
         </div>
       </div>
 
-      <!-- График доходности по районам (компактный) -->
-      <div class="chart-container">
-        <h3>Доходность по районам</h3>
-        <div class="chart-wrapper">
-          <canvas id="districtChart" width="400" height="200"></canvas>
+      <div class="charts-row">
+        <div class="chart-container">
+          <h3>Доходность по районам</h3>
+          <div class="chart-wrapper">
+            <canvas id="districtChart" width="400" height="200"></canvas>
+          </div>
+          <p class="chart-note" id="districtNote">Загрузка данных...</p>
         </div>
-        <p class="chart-note">Центральный район лидирует по доходности</p>
+
+        <div class="chart-container">
+          <h3>Типы объектов</h3>
+          <div class="chart-wrapper">
+            <canvas id="objectTypesChart" width="400" height="250"></canvas>
+          </div>
+          <p class="chart-note">Доходность по категориям</p>
+        </div>
       </div>
 
-      <!-- Таблица просрочек -->
+      <div class="charts-row">
+        <div class="chart-container">
+          <h3>Топ-5 объектов по доходу</h3>
+          <div class="chart-wrapper">
+            <canvas id="topObjectsChart" width="500" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3>Надежность арендаторов</h3>
+          <div class="chart-wrapper">
+            <canvas
+              id="renterReliabilityChart"
+              width="400"
+              height="200"
+            ></canvas>
+          </div>
+          <p class="chart-note">% своевременных платежей</p>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-container">
+          <h3>Прогноз доходов на 3 месяца</h3>
+          <div class="chart-wrapper">
+            <canvas id="forecastChart" width="400" height="200"></canvas>
+          </div>
+          <p class="chart-note" id="forecastNote">
+            На основе данных за последние 3 месяца
+          </p>
+        </div>
+
+        <div class="chart-container">
+          <h3>Сезонность просрочек</h3>
+          <div class="chart-wrapper">
+            <canvas id="seasonalityChart" width="400" height="200"></canvas>
+          </div>
+          <p class="chart-note">Просрочки по месяцам</p>
+        </div>
+      </div>
+
       <div class="table-container">
         <h3>Просрочки по платежам</h3>
         <table class="data-table">
@@ -66,29 +115,10 @@
           </thead>
           <tbody id="overdueTableBody">
             <tr>
-              <td>Детский сад №114</td>
-              <td>Центральный</td>
-              <td>45 000 ₽</td>
-              <td>15</td>
-              <td><span class="badge warning">Просрочка</span></td>
-            </tr>
-            <tr>
-              <td>Административное здание</td>
-              <td>Ленинский</td>
-              <td>92 500 ₽</td>
-              <td>32</td>
-              <td><span class="badge critical">Критично</span></td>
+              <td colspan="5" style="text-align: center">Загрузка данных...</td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <!-- Самые доходные объекты -->
-      <div class="chart-container">
-        <h3>Топ-5 объектов по доходу</h3>
-        <div class="chart-wrapper">
-          <canvas id="topObjectsChart" width="400" height="200"></canvas>
-        </div>
       </div>
     </div>
 
