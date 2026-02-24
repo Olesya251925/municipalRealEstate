@@ -7,7 +7,7 @@ const PDFDocument = require("pdfkit");
 const fontkit = require("fontkit");
 
 const app = express();
-const port = 3001;
+const port = 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -23,7 +23,7 @@ const pool = new Pool({
   user: "postgres",
   host: "localhost",
   database: "immovables",
-  password: "251925",
+  password: "2351",
   port: 5433,
 });
 
