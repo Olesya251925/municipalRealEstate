@@ -555,7 +555,6 @@ app.get("/api/analytics/object-types", async (req, res) => {
     `;
     const result = await pool.query(query);
 
-    console.log("Типы объектов:", result.rows);
     res.json(result.rows);
   } catch (error) {
     console.error("Ошибка типов объектов:", error);
