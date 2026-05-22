@@ -349,7 +349,6 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
 
 // ========== АНАЛИТИКА ==========
 
-// Доходность по районам
 app.get("/api/analytics/districts", async (req, res) => {
   try {
     const query = `
@@ -417,7 +416,6 @@ app.get("/api/analytics/districts", async (req, res) => {
   }
 });
 
-// Топ-10 объектов по доходу
 app.get("/api/analytics/top-objects", async (req, res) => {
   try {
     const query = `
@@ -432,7 +430,7 @@ app.get("/api/analytics/top-objects", async (req, res) => {
       GROUP BY obj.objectestate_id, obj.name
       HAVING SUM(p.sum) > 0
       ORDER BY total_income DESC
-      LIMIT 10
+      LIMIT 5
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -442,7 +440,6 @@ app.get("/api/analytics/top-objects", async (req, res) => {
   }
 });
 
-// Просрочки
 app.get("/api/analytics/overdue", async (req, res) => {
   try {
     const query = `
@@ -475,7 +472,6 @@ app.get("/api/analytics/overdue", async (req, res) => {
   }
 });
 
-// Статистика для верхних карточек
 app.get("/api/analytics/stats", async (req, res) => {
   try {
     const totalQuery = `SELECT COUNT(*) as count FROM data_public."справочник_объектов_недвижимости"`;
@@ -527,7 +523,6 @@ app.get("/api/analytics/stats", async (req, res) => {
   }
 });
 
-// Типы объектов
 app.get("/api/analytics/object-types", async (req, res) => {
   try {
     const query = `
@@ -568,7 +563,6 @@ app.get("/api/analytics/object-types", async (req, res) => {
   }
 });
 
-// Надежность арендаторов
 app.get("/api/analytics/renter-reliability", async (req, res) => {
   try {
     const query = `
@@ -602,7 +596,6 @@ app.get("/api/analytics/renter-reliability", async (req, res) => {
   }
 });
 
-// Прогноз доходов
 app.get("/api/analytics/forecast", async (req, res) => {
   try {
     // Получаем данные за последние 3 месяца
@@ -684,7 +677,6 @@ app.get("/api/analytics/forecast", async (req, res) => {
   }
 });
 
-// Сезонность просрочек
 app.get("/api/analytics/seasonality", async (req, res) => {
   try {
     const query = `
@@ -705,6 +697,18 @@ app.get("/api/analytics/seasonality", async (req, res) => {
     console.error("Ошибка сезонности:", error);
     res.status(500).json({ error: error.message });
   }
+});
+
+const {
+  scheduleNotifications,
+  generateAndSendNotifications,
+} = require("./src/script/notifications");
+
+scheduleNotifications(pool);
+
+app.post("/api/notifications/check", async (req, res) => {
+  const result = await generateAndSendNotifications(pool);
+  res.json(result);
 });
 
 app.listen(port, () => {
