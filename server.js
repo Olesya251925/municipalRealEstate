@@ -347,8 +347,6 @@ app.get("/api/download-contract/:leaseId", async (req, res) => {
   }
 });
 
-// ========== АНАЛИТИКА ==========
-
 app.get("/api/analytics/districts", async (req, res) => {
   try {
     const query = `
@@ -585,7 +583,6 @@ app.get("/api/analytics/renter-reliability", async (req, res) => {
     `;
     const result = await pool.query(query);
 
-    // Для отладки - посмотрим в консоль
     console.log("Данные по арендаторам:", result.rows);
 
     res.json(result.rows);
@@ -597,7 +594,6 @@ app.get("/api/analytics/renter-reliability", async (req, res) => {
 
 app.get("/api/analytics/forecast", async (req, res) => {
   try {
-    // Получаем данные за последние 3 месяца
     const actualQuery = `
       SELECT 
         TO_CHAR(date_pay, 'YYYY-MM') as month,
@@ -611,7 +607,6 @@ app.get("/api/analytics/forecast", async (req, res) => {
     `;
     const actualResult = await pool.query(actualQuery);
 
-    // Получаем средний платеж за последние 3 месяца
     const avgQuery = `
       SELECT COALESCE(AVG(sum), 0) as avg_payment
       FROM data_public."платежи"
@@ -639,7 +634,6 @@ app.get("/api/analytics/forecast", async (req, res) => {
 
     const forecast = [];
 
-    // Последние 3 месяца (факт)
     for (let i = 2; i >= 0; i--) {
       const date = new Date();
       date.setMonth(now.getMonth() - i);
@@ -655,8 +649,7 @@ app.get("/api/analytics/forecast", async (req, res) => {
       });
     }
 
-    // Следующие 3 месяца (прогноз)
-    const avgMonthlyTotal = avgPayment * 5; // среднее количество платежей в месяц
+    const avgMonthlyTotal = avgPayment * 5;
     for (let i = 1; i <= 3; i++) {
       const date = new Date();
       date.setMonth(now.getMonth() + i);

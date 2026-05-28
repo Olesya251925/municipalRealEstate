@@ -36,7 +36,6 @@ async function getTransporter() {
   });
 }
 
-// ========== УВЕДОМЛЕНИЯ ОБ УСПЕШНЫХ ПЛАТЕЖАХ ==========
 async function generateSuccessfulPaymentNotifications(pool) {
   try {
     const result = await pool.query(`
@@ -73,7 +72,6 @@ async function generateSuccessfulPaymentNotifications(pool) {
   }
 }
 
-// ========== ОСНОВНАЯ ФУНКЦИЯ ==========
 async function generateAndSendNotifications(pool) {
   if (!pool) {
     console.error("❌ Ошибка: pool не передан");
@@ -81,7 +79,6 @@ async function generateAndSendNotifications(pool) {
   }
 
   try {
-    // 1. Создаем уведомления о просрочках и напоминания
     const generateResult = await pool.query(`
       INSERT INTO data_public."уведомления" 
       (lease_id, object_id, notification_type, message, creation_date, status_notification, name, days_relative)
@@ -126,10 +123,8 @@ async function generateAndSendNotifications(pool) {
       `📝 Создано уведомлений о просрочках/напоминаниях: ${generateResult.rowCount}`,
     );
 
-    // 2. Создаем уведомления об успешных платежах
     await generateSuccessfulPaymentNotifications(pool);
 
-    // 3. Получаем все неотправленные уведомления с дополнительными данными через JOIN
     const notificationsResult = await pool.query(`
       SELECT 
         n.*, 
