@@ -19,7 +19,7 @@ async function getTransporter() {
 
   if (!testAccount) {
     testAccount = await nodemailer.createTestAccount();
-    console.log("\n📧 ТЕСТОВЫЙ EMAIL АККАУНТ СОЗДАН:");
+    console.log("\nТЕСТОВЫЙ EMAIL АККАУНТ СОЗДАН:");
     console.log(`   Логин: ${testAccount.user}`);
     console.log(`   Пароль: ${testAccount.pass}`);
     console.log(`   Просмотр писем: ${testAccount.web}\n`);
@@ -162,7 +162,7 @@ async function generateAndSendNotifications(pool) {
         if (!USE_REAL_EMAIL) {
           const previewUrl = nodemailer.getTestMessageUrl(info);
         } else {
-          console.log(`✅ Отправлено на ${notification.renter_email}`);
+          console.log(`Отправлено на ${notification.renter_email}`);
         }
 
         await pool.query(
@@ -180,7 +180,6 @@ async function generateAndSendNotifications(pool) {
       }
     }
 
-    console.log(`📧 Отправлено уведомлений: ${sentCount}`);
     return { created: generateResult.rowCount, sent: sentCount };
   } catch (error) {
     console.error("Ошибка в уведомлениях:", error);

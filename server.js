@@ -583,8 +583,6 @@ app.get("/api/analytics/renter-reliability", async (req, res) => {
     `;
     const result = await pool.query(query);
 
-    console.log("Данные по арендаторам:", result.rows);
-
     res.json(result.rows);
   } catch (error) {
     console.error("Ошибка надежности арендаторов:", error);
