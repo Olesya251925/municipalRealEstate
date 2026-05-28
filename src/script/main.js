@@ -15,6 +15,46 @@ L.control
   })
   .addTo(map);
 
+L.control
+  .scale({
+    metric: true,
+    imperial: false,
+    position: "bottomright",
+  })
+  .addTo(map);
+
+var legend = L.control({ position: "bottomleft" });
+
+legend.onAdd = function () {
+  var div = L.DomUtil.create("div", "map-legend");
+  div.innerHTML = `
+    <h4>📌 Статусы объектов</h4>
+    <div class="legend-item">
+      <div class="legend-color blue"></div>
+      <span class="legend-text">Объект свободен и готов к сдаче</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color green"></div>
+      <span class="legend-text">Объект сдан в аренду, платежи исправны</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color red"></div>
+      <span class="legend-text">Просрочка по арендной плате</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color gray"></div>
+      <span class="legend-text">На реконструкции или не используется</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color yellow"></div>
+      <span class="legend-text">Истекает срок договора аренды</span>
+    </div>
+  `;
+  return div;
+};
+
+legend.addTo(map);
+
 function getMarkerColor(paint) {
   const colors = {
     Зеленый: "#10b981",

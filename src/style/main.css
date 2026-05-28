@@ -196,3 +196,81 @@ body {
   background: rgba(255, 255, 255, 0.2);
   font-weight: 500;
 }
+
+.map-legend {
+  position: absolute;
+  bottom: 30px;
+  left: 10px;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  font-size: 12px;
+  min-width: 180px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.map-legend h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #ccc;
+}
+
+.legend-color.blue {
+  background-color: #1e3a8a;
+}
+.legend-color.green {
+  background-color: #10b981;
+}
+.legend-color.red {
+  background-color: #ef4444;
+}
+.legend-color.gray {
+  background-color: #6b7280;
+}
+.legend-color.yellow {
+  background-color: #f59e0b;
+}
+
+.legend-text {
+  color: #333;
+  font-size: 11px;
+}
+
+.leaflet-control-scale {
+  position: absolute;
+  bottom: 30px;
+  right: 10px;
+  z-index: 1000;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 11px;
+  font-family: monospace;
+  border: 1px solid #ccc;
+}
+
+.leaflet-control-scale-line {
+  border-color: #333 !important;
+  color: #333 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+}
