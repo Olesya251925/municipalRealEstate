@@ -183,12 +183,12 @@ async function loadObjectTypesChart() {
           {
             data: data.map((item) => Math.round(item.total_income / 1000000)),
             backgroundColor: [
-              "#1E3A8A", // Детские сады - синий
-              "#10b981", // Школы - зеленый
-              "#f59e0b", // Офисы - оранжевый
-              "#ef4444", // Помещения - красный
-              "#8b5cf6", // Сооружения - фиолетовый
-              "#ec4899", // Другое - розовый
+              "#1E3A8A",
+              "#10b981",
+              "#f59e0b",
+              "#ef4444",
+              "#8b5cf6",
+              "#ec4899",
             ],
             borderWidth: 0,
           },

@@ -701,6 +701,6 @@ app.post("/api/notifications/check", async (req, res) => {
   res.json(result);
 });
 
-app.listen(port, () => {
-  console.log(`Сервер запущен на http://localhost:3000`);
+app.listen(port, "localhost", () => {
+  console.log(`Сервер запущен на http://localhost:${port}`);
 });
