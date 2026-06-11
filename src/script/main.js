@@ -1,3 +1,5 @@
+const API_BASE_URL = "";
+
 var kemerovoCenter = [55.355, 86.087];
 
 var map = L.map("map", {
@@ -234,7 +236,7 @@ async function loadContractInfo(objectId, popupElement) {
 }
 
 window.downloadContract = function (leaseId) {
-  window.open(`/api/download-contract/${leaseId}`, "_blank");
+  window.open(`${API_BASE_URL}/api/download-contract/${leaseId}`, "_blank");
 };
 
 window.showAllPayments = async function (objectId) {
@@ -352,7 +354,7 @@ window.showAllPayments = async function (objectId) {
   }
 };
 
-fetch("/api/coordinates")
+fetch(`${API_BASE_URL}/api/coordinates`)
   .then((response) => {
     if (!response.ok) {
       throw new Error("Ошибка HTTP: " + response.status);

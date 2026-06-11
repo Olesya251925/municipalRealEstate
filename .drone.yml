@@ -1,0 +1,51 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: build-and-push
+    image: quay.io/podman/stable
+    privileged: true
+    environment:
+      STORAGE_DRIVER: vfs
+      PODMAN_IGNORE_CGROUPSV1_WARNING: "1"
+      GITEA_USERNAME:
+        from_secret: GITEA_USERNAME
+      GITEA_SECRET_KEY:
+        from_secret: GITEA_SECRET_KEY
+    commands:
+      - |
+        REGISTRY_URL="82.179.9.27:3000"
+        IMAGE_NAME="$REGISTRY_URL/olesya/municipal-real-estate"
+
+        echo "$GITEA_SECRET_KEY" | podman login "$REGISTRY_URL" \
+          --username "$GITEA_USERNAME" \
+          --password-stdin \
+          --tls-verify=false
+
+        podman build -f dockerfile -t "$IMAGE_NAME:$DRONE_COMMIT_SHA" .
+        podman tag "$IMAGE_NAME:$DRONE_COMMIT_SHA" "$IMAGE_NAME:latest"
+
+        podman push --tls-verify=false "$IMAGE_NAME:latest"
+
+  - name: trigger-deploy
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_TOKEN:
+        from_secret: DEPLOY_TOKEN
+      DEPLOY_PORT:
+        from_secret: DEPLOY_PORT
+      REVERSE_PORT:
+        from_secret: REVERSE_PORT
+      GITEA_USERNAME:
+        from_secret: GITEA_USERNAME
+    commands:
+      - |
+        curl -X POST http://82.179.9.27:8089/deploy \
+          -H "Content-Type: application/json" \
+          -H "X-Deploy-Token: $DEPLOY_TOKEN" \
+          -d "{\"user\":\"$GITEA_USERNAME\",\"repo\":\"municipal-real-estate\",\"tag\":\"$DRONE_COMMIT_SHA\",\"port\":$DEPLOY_PORT,\"reverse_port\":\"$REVERSE_PORT\"}"
+    when:
+      branch:
+        - main
+        - master

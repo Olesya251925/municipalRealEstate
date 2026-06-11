@@ -1,3 +1,5 @@
+const API_BASE_URL = "";
+
 document.addEventListener("DOMContentLoaded", async function () {
   await loadStats();
   await loadDistrictChart();
@@ -11,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 async function loadStats() {
   try {
-    const response = await fetch("/api/analytics/stats");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/stats`);
     const stats = await response.json();
 
     document.getElementById("totalObjects").textContent = stats.totalObjects;
@@ -31,7 +33,7 @@ async function loadStats() {
 
 async function loadDistrictChart() {
   try {
-    const response = await fetch("/api/analytics/districts");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/districts`);
     const data = await response.json();
 
     if (data.length === 0) {
@@ -85,7 +87,7 @@ async function loadDistrictChart() {
 
 async function loadTopObjectsChart() {
   try {
-    const response = await fetch("/api/analytics/top-objects");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/top-objects`);
     const objects = await response.json();
 
     if (objects.length === 0) return;
@@ -134,7 +136,7 @@ async function loadTopObjectsChart() {
 
 async function loadObjectTypesChart() {
   try {
-    const response = await fetch("/api/analytics/object-types");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/object-types`);
     const data = await response.json();
 
     if (data.length === 0) {
@@ -183,12 +185,12 @@ async function loadObjectTypesChart() {
           {
             data: data.map((item) => Math.round(item.total_income / 1000000)),
             backgroundColor: [
-              "#1E3A8A",
-              "#10b981",
-              "#f59e0b",
-              "#ef4444",
-              "#8b5cf6",
-              "#ec4899",
+              "#1E3A8A", // Детские сады
+              "#10b981", // Школы
+              "#f59e0b", // Офисы
+              "#ef4444", // Помещения
+              "#8b5cf6", // Сооружения
+              "#ec4899", // Другое
             ],
             borderWidth: 0,
           },
@@ -243,7 +245,9 @@ async function loadObjectTypesChart() {
 
 async function loadRenterReliabilityChart() {
   try {
-    const response = await fetch("/api/analytics/renter-reliability");
+    const response = await fetch(
+      `${API_BASE_URL}/api/analytics/renter-reliability`,
+    );
     const data = await response.json();
 
     if (data.length === 0) return;
@@ -302,7 +306,7 @@ async function loadRenterReliabilityChart() {
 
 async function loadForecastChart() {
   try {
-    const response = await fetch("/api/analytics/forecast");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/forecast`);
     const data = await response.json();
 
     if (data.length === 0) return;
@@ -402,7 +406,7 @@ async function loadForecastChart() {
 
 async function loadSeasonalityChart() {
   try {
-    const response = await fetch("/api/analytics/seasonality");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/seasonality`);
     const data = await response.json();
 
     if (data.length === 0) return;
@@ -495,7 +499,7 @@ async function loadSeasonalityChart() {
 
 async function loadOverdueTable() {
   try {
-    const response = await fetch("/api/analytics/overdue");
+    const response = await fetch(`${API_BASE_URL}/api/analytics/overdue`);
     const overdue = await response.json();
 
     const tbody = document.getElementById("overdueTableBody");

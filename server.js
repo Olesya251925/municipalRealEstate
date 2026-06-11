@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
@@ -7,7 +8,7 @@ const PDFDocument = require("pdfkit");
 const fontkit = require("fontkit");
 
 const app = express();
-const port = 3000;
+const port = 3010;
 
 app.use(cors());
 app.use(express.json());
@@ -20,11 +21,11 @@ if (!fs.existsSync(contractsDir)) {
 app.use("/contracts", express.static(contractsDir));
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "immovables",
-  password: "251925",
-  port: 5433,
+  user: process.env.DB_USER || "olesya",
+  host: process.env.DB_HOST || "82.179.9.27",
+  database: process.env.DB_NAME || "immovables",
+  password: process.env.DB_PASSWORD || "trivi239!olevl_2124",
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
 });
 
 app.get("/api/coordinates", async (req, res) => {
@@ -701,6 +702,6 @@ app.post("/api/notifications/check", async (req, res) => {
   res.json(result);
 });
 
-app.listen(port, "localhost", () => {
-  console.log(`Сервер запущен на http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Сервер запущен на http://0.0.0.0:3010`);
 });
