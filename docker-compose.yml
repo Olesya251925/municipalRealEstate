@@ -1,29 +1,43 @@
-services:
-  db:
-    image: docker.io/postgres:15
-    environment:
-      POSTGRES_DB: immovables
-      POSTGRES_USER: olesya
-      POSTGRES_PASSWORD: trivi239!olevl_2124
-    volumes:
-      - ./immovables.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U olesya -d immovables"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+version: "3.8"
 
-  app:
-    build: .
+services:
+  backend:
+    image: municipalrealestate-app:latest
+    container_name: municipal-backend
     ports:
       - "3010:3010"
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       DB_HOST: db
       DB_USER: olesya
       DB_PASSWORD: trivi239!olevl_2124
       DB_NAME: immovables
+      DB_PORT: 5432
+    volumes:
+      - ./contracts:/app/contracts
+      - ./fonts:/app/fonts
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: municipal-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15
+    container_name: municipal-db
+    environment:
+      POSTGRES_USER: olesya
+      POSTGRES_PASSWORD: trivi239!olevl_2124
+      POSTGRES_DB: immovables
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./immovables.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:
